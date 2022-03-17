@@ -171,8 +171,37 @@ class RandomRotation:
 
 class ColorJitter:
     """Randomly adjusts the hue, saturation, and value of an image."""
-    def __init__(self):
+    def __init__(self, hue_limit=30, sat_limit=5, val_limit=15):
         self.name = "ColorJitter"
+        self.hue_limit = hue_limit
+        self.sat_limit = sat_limit
+        self.val_limit = val_limit
+        self.p = 0.5
 
     def __call__(self, sample):
-        pass
+        rng = np.random.default_rng()
+        img = sample["image"]
+
+        if rng.random() < self.p:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # Convert to HSV
+            h, s, v = cv2.split(img)
+            # Apply hue shift
+            hue_shift = rng.integers(-self.hue_limit, self.hue_limit + 1)
+            hue_shift = np.uint8(hue_shift)
+            h += hue_shift
+            # Apply saturation shift
+            sat_shift = rng.uniform(-self.sat_limit, self.sat_limit)
+            s += cv2.add(s, sat_shift)
+            # Apply value shift
+            val_shift = rng.uniform(-self.val_limit, self.val_limit)
+            v = cv2.add(v, val_shift)
+            # Merge changes and convert back to BGR
+            img = cv2.merge((h, s, v))
+            img = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
+
+        return {"image": img, "label": sample["label"]}
+
+
+if __name__ == '__main__':
+    # TODO: test data augmentation
+    pass
