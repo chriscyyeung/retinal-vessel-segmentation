@@ -1,0 +1,11 @@
+description: DRIVE dataset segmentation pipeline
+preprocess:
+  train:
+    - name: "ColorJitter"
+    - name: "RandomScale"
+    - name: "RandomShift"
+    - name: "RandomFlip"
+    - name: "RandomRotation"
+  test:
+    - name: "RandomFlip"
+    - name: "RandomRotation"

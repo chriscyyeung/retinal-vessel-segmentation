@@ -1,0 +1,7 @@
+# required packages
+pyyaml
+opencv-python
+pillow
+tqdm
+numpy
+tensorflow
