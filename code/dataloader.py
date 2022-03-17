@@ -7,11 +7,13 @@ from PIL import Image
 
 
 class DataLoader(tf.keras.utils.Sequence):
-    def __init__(self, transforms=None, train=True, batch_size=1):
+    def __init__(self, transforms=None, train=True, batch_size=1, path="data/"):
         self.transforms = transforms
         self.train = train
         self.batch_size = batch_size
-        self.data_path = "data/training" if train else "data/test"
+        train_path = os.path.join(path, "training")
+        test_path = os.path.join(path, "test")
+        self.data_path = train_path if train else test_path
         self.images, self.labels = self.get_dataset_names()
 
     def get_dataset_names(self):
@@ -203,5 +205,5 @@ class ColorJitter:
 
 
 if __name__ == '__main__':
-    # TODO: test data augmentation
+
     pass
