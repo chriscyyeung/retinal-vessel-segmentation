@@ -56,6 +56,13 @@ class DataLoader(tf.keras.utils.Sequence):
 
         return img, label
 
+    def on_epoch_end(self):
+        # Shuffle dataset
+        rng = np.random.default_rng()
+        p = rng.permutation(len(self.images))
+        self.images = self.images[p]
+        self.labels = self.labels[p]
+
     def __len__(self):
         return math.ceil(len(self.images) / self.batch_size)
 
