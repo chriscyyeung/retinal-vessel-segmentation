@@ -17,19 +17,16 @@ class DataLoader(tf.keras.utils.Sequence):
         self.images, self.labels = self.get_dataset_names()
 
     def get_dataset_names(self):
+        # Get lists of images and ground truth labels
         images = []
         labels = []
         image_root = os.path.join(self.data_path, "images")
         label_root = os.path.join(self.data_path, "1st_manual")
 
         for image_name in os.listdir(image_root):
+            label_path = image_name.split("_")[0] + "_manual1.gif"
             images.append(os.path.join(image_root, image_name))
-            if self.train:
-                label_name = os.path.join(
-                    label_root,
-                    image_name.split("_")[0] + "_manual1.gif"
-                )
-                labels.append(label_name)
+            labels.append(os.path.join(label_root, label_path))
 
         return images, labels
 
@@ -233,11 +230,15 @@ class RandomRotation:
 if __name__ == '__main__':
     import yaml
 
-    dataloader = DataLoader(batch_size=8)
-    img, label = dataloader[0]
-    print(img.shape, label.shape)
+    train_dataloader = DataLoader(batch_size=8)
+    img, label = train_dataloader[0]
+    print(f"train image shape: {img.shape}, train label shape: {label.shape}")
 
-    # Get list of transforms
+    test_dataloader = DataLoader(train=False)
+    test_img, test_label = test_dataloader[0]
+    print(f"test image shape: {test_img.shape}, test label shape: {test_label.shape}")
+
+    # Get list of train transforms
     with open("config/pipeline.yaml", "r") as f:
         pipeline = yaml.load(f, Loader=yaml.FullLoader)
     transforms = []
@@ -256,5 +257,5 @@ if __name__ == '__main__':
         transformed_sample = transform(sample)
         new_img, new_label = transformed_sample["image"], transformed_sample["label"]
         cv2.imshow(transform.name, new_img)
-        cv2.waitKey(0)
+        cv2.waitKey(2000)
     cv2.destroyAllWindows()
