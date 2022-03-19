@@ -34,7 +34,6 @@ class DataLoader(tf.keras.utils.Sequence):
         # Read images
         img = cv2.imread(img_path)
         img = cv2.resize(img, self.input_dim)
-        img = img.astype(np.float32)
         label = np.array(Image.open(label_path))
         label = cv2.resize(label, self.input_dim)
         sample = {"image": img, "label": label}
@@ -44,12 +43,11 @@ class DataLoader(tf.keras.utils.Sequence):
             for transform in self.transforms:
                 sample = transform(sample)
 
-        # Normalize pixel values
+        # Normalize pixel values and convert label to binary
         img = sample["image"] / 255.
         label = np.expand_dims(sample["label"], axis=2) / 255.
         label[label >= 0.5] = 1
         label[label < 0.5] = 0
-        label = label.astype(np.int)
 
         return img, label
 
@@ -80,7 +78,7 @@ class DataLoader(tf.keras.utils.Sequence):
             y_batch = np.concatenate((y_batch, np.expand_dims(label, axis=0)))
 
         X_batch = X_batch.astype(np.float32)
-        y_batch = y_batch.astype(np.float32)
+        y_batch = (y_batch * 255).astype(np.uint8)
         return X_batch, y_batch
 
 
@@ -232,6 +230,7 @@ if __name__ == '__main__':
 
     train_dataloader = DataLoader(batch_size=8)
     img, label = train_dataloader[0]
+    print(f"image type: {img.dtype}, label type: {label.dtype}")
     print(f"train image shape: {img.shape}, train label shape: {label.shape}")
 
     test_dataloader = DataLoader(train=False)
@@ -252,10 +251,23 @@ if __name__ == '__main__':
 
     # Test data augmentation classes
     sample = {"image": img[0], "label": label[0]}
-    print(img[0].shape, label[0].shape)
+    print(f"image shape: {img[0].shape}, label shape: {label[0].shape}")
+    cv2.imshow("original image", sample["image"])
+    cv2.waitKey(1000)
+    cv2.imshow("original label", sample["label"])
+    cv2.waitKey(1000)
     for transform in transforms:
         transformed_sample = transform(sample)
         new_img, new_label = transformed_sample["image"], transformed_sample["label"]
         cv2.imshow(transform.name, new_img)
-        cv2.waitKey(2000)
+        cv2.waitKey(1000)
+        cv2.imshow(transform.name, new_label)
+        cv2.waitKey(1000)
     cv2.destroyAllWindows()
+
+    # Test color jitter (only works with uint8 images so above code doesn't work)
+    transform_dataloader = DataLoader(transforms=transforms, batch_size=8)
+    transform_img, transform_label = transform_dataloader[0]
+    for i in range(transform_img.shape[0]):
+        cv2.imshow(f"image {i + 1}", transform_img[i])
+        cv2.waitKey(1000)
