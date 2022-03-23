@@ -1,7 +1,11 @@
-# required packages
+# non-versioned packages
 pyyaml
 opencv-python
 pillow
 tqdm
 numpy
 tensorflow
+keras_applications
+
+# versioned packages
+image-classifiers==1.0.0b1
