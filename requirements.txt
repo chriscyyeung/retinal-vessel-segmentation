@@ -1,10 +1,12 @@
 # non-versioned packages
 pyyaml
+h5py
 opencv-python
 pillow
 tqdm
 numpy
 tensorflow
+tensorflow-addons
 keras_applications
 
 # versioned packages

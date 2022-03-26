@@ -2,7 +2,8 @@ import tensorflow as tf
 
 
 class DiceLoss(tf.keras.losses.Loss):
-    def __init__(self, smooth=1e-5):
+    def __init__(self, name="dice_loss", smooth=1e-5):
+        super().__init__(name=name)
         self.smooth = smooth
 
     def call(self, y_true, y_pred):

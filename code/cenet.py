@@ -23,8 +23,8 @@ class DACBlock(Layer):
         branch2 = self.relu(self.conv1x1(self.atrous2(x)))
         branch3 = self.relu(self.conv1x1(self.atrous2(self.atrous1(x))))
         branch4 = self.relu(self.conv1x1(self.atrous3(self.atrous2(self.atrous1(x)))))
-        output = x + branch1 + branch2 + branch3 + branch4
-        return output
+        out = x + branch1 + branch2 + branch3 + branch4
+        return out
 
 
 class RMPBlock(Layer):
@@ -43,8 +43,8 @@ class RMPBlock(Layer):
         pool2_out = tf.image.resize(self.conv(self.pool2(x)), size=(height, width))
         pool3_out = tf.image.resize(self.conv(self.pool3(x)), size=(height, width))
         pool4_out = tf.image.resize(self.conv(self.pool4(x)), size=(height, width))
-        output = tf.concat([pool1_out, pool2_out, pool3_out, pool4_out, x], axis=3)
-        return output
+        out = tf.concat([pool1_out, pool2_out, pool3_out, pool4_out, x], axis=3)
+        return out
 
 
 class DecoderBlock(Layer):
@@ -87,8 +87,6 @@ class CENet(tf.keras.Model):
         # ResNet backbone
         ResNet34 = Classifiers.get("resnet34")[0]
         self.resnet = ResNet34(include_top=False, input_tensor=inputs)
-        for layer in self.resnet.layers:
-            layer.trainable = False  # Freeze encoder layers
 
         # Context encoder module
         self.DAC = DACBlock(input_dim[0])
@@ -108,7 +106,7 @@ class CENet(tf.keras.Model):
         self.final_conv3 = Conv2D(1, kernel_size=3, padding="same")
         self.sigmoid = Activation("sigmoid")
 
-    def call(self, x, training):
+    def call(self, x, training=False):
         e = self.resnet(x)
         # Skip connections
         skip1 = self.resnet.get_layer("stage2_unit1_relu1").output

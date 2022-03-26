@@ -7,7 +7,7 @@ from PIL import Image
 
 
 class DataLoader(tf.keras.utils.Sequence):
-    def __init__(self, transforms=None, train=True, batch_size=1, shuffle=True):
+    def __init__(self, transforms=None, batch_size=1, train=False, shuffle=True):
         self.input_dim = (512, 512)
         self.transforms = transforms
         self.train = train

@@ -1,0 +1,21 @@
+{
+    "ProjectName": "CENet TensorFlow",
+    "Pipeline": "config/pipeline.yaml",
+    "TrainingSettings": {
+        "InputShape": [512, 512, 3],
+        "Epochs": 100,
+        "Patience": 20,
+        "BatchSize": 8,
+        "Optimizer": {
+            "InitialLearningRate": 0.004,
+            "LearningRatePower": 0.9,
+            "WeightDecay": 0.0001,
+            "Momentum": 0.9
+        }
+    },
+    "TestingSettings": {
+        "XYStride": 18,
+        "ZStride": 4
+    },
+    "Seed": 2022
+}
