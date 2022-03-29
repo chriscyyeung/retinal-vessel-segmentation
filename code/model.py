@@ -55,7 +55,7 @@ class Model:
         @tf.function
         def train_step(img, label):
             with tf.GradientTape() as tape:
-                out = network(img)
+                out = network(img, training=True)
                 loss = loss_fn(label, out)
             grads = tape.gradient(loss, network.trainable_variables)
             optimizer.apply_gradients(zip(grads, network.trainable_variables))
@@ -79,7 +79,7 @@ class Model:
                 epoch_loss += loss / epoch_size
                 metric.update_state(label, out)
                 epoch_acc += metric.result().numpy() / epoch_size
-            print(f"{datetime.datetime.now()}: Epoch {epoch}: loss: {epoch_loss}, acc: {epoch_acc}")
+            print(f"{datetime.datetime.now()}: Epoch {epoch}: loss: {epoch_loss:.4f}, acc: {epoch_acc:.4f}")
 
             # Early stopping criteria
             if epoch_loss < best_epoch_loss:

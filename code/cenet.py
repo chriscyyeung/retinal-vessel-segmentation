@@ -1,4 +1,5 @@
 import tensorflow as tf
+import keras.backend as K
 from tensorflow.keras.layers import (
     Layer, Input, Conv2D, Conv2DTranspose, ReLU, MaxPool2D, BatchNormalization, Activation
 )
@@ -82,11 +83,23 @@ class DecoderBlock(Layer):
 class CENet(tf.keras.Model):
     def __init__(self, input_dim=(512, 512, 3)):
         super().__init__()
-        inputs = Input(input_dim)
+        self.inputs = Input(input_dim)
 
-        # ResNet backbone
+        # ResNet encoder backbone
         ResNet34 = Classifiers.get("resnet34")[0]
-        self.resnet = ResNet34(include_top=False, input_tensor=inputs)
+        self.resnet = ResNet34(include_top=False, input_tensor=self.inputs)
+        self.skip1 = tf.keras.Model(
+            inputs=self.resnet.input,
+            outputs=self.resnet.get_layer("stage2_unit1_relu1").output
+        )
+        self.skip2 = tf.keras.Model(
+            inputs=self.resnet.input,
+            outputs=self.resnet.get_layer("stage3_unit1_relu1").output
+        )
+        self.skip3 = tf.keras.Model(
+            inputs=self.resnet.input,
+            outputs=self.resnet.get_layer("stage4_unit1_relu1").output
+        )
 
         # Context encoder module
         self.DAC = DACBlock(input_dim[0])
@@ -108,17 +121,16 @@ class CENet(tf.keras.Model):
 
     def call(self, x, training=False):
         e = self.resnet(x)
-        # Skip connections
-        skip1 = self.resnet.get_layer("stage2_unit1_relu1").output
-        skip2 = self.resnet.get_layer("stage3_unit1_relu1").output
-        skip3 = self.resnet.get_layer("stage4_unit1_relu1").output
+        s1 = self.skip1(x)
+        s2 = self.skip2(x)
+        s3 = self.skip3(x)
 
         bridge = self.DAC(e)
         bridge = self.RMP(bridge)
 
-        d4 = self.decoder4(bridge, training=training) + skip3
-        d3 = self.decoder3(d4, training=training) + skip2
-        d2 = self.decoder2(d3, training=training) + skip1
+        d4 = self.decoder4(bridge, training=training) + s3
+        d3 = self.decoder3(d4, training=training) + s2
+        d2 = self.decoder2(d3, training=training) + s1
         d1 = self.decoder1(d2, training=training)
 
         out = self.final_deconv(d1)

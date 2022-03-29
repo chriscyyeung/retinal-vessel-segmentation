@@ -56,8 +56,8 @@ class DataLoader(tf.keras.utils.Sequence):
         if self.shuffle:
             rng = np.random.default_rng()
             p = rng.permutation(len(self.images))
-            self.images = self.images[p]
-            self.labels = self.labels[p]
+            self.images = [self.images[i] for i in p]
+            self.labels = [self.labels[i] for i in p]
 
     def __len__(self):
         return math.ceil(len(self.images) / self.batch_size)
@@ -72,7 +72,7 @@ class DataLoader(tf.keras.utils.Sequence):
         y_batch = np.zeros((0, *self.input_dim, 1))  # only one channel
 
         # Add images and labels to arrays
-        for i in range(self.batch_size):
+        for i in range(len(X_batch_names)):
             img, label = self.input_parser(X_batch_names[i], y_batch_names[i])
             X_batch = np.concatenate((X_batch, np.expand_dims(img, axis=0)))
             y_batch = np.concatenate((y_batch, np.expand_dims(label, axis=0)))
