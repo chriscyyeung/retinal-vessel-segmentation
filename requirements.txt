@@ -1,0 +1,14 @@
+# non-versioned packages
+pyyaml
+h5py
+opencv-python
+pillow
+tqdm
+numpy
+tensorflow
+tensorflow-addons
+keras
+keras_applications
+
+# versioned packages
+image-classifiers==1.0.0b1
