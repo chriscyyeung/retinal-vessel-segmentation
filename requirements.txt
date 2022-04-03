@@ -1,3 +1,4 @@
+torch
 # non-versioned packages
 pyyaml
 h5py
