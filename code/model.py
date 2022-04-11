@@ -1,13 +1,14 @@
-import os
 import yaml
 import h5py
 import tqdm
 import datetime
+import cv2
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 
 import dataloader
+from metric import accuracy, calculate_eval_metric
 from loss import DiceLoss
 from cenet import CENet
 
@@ -74,6 +75,8 @@ class Model:
             for batch_idx in range(epoch_size):
                 img, label = generator[batch_idx]
                 out, loss = train_step(img, label)
+                cv2.imwrite("test_result.png", out[0].numpy().astype(np.uint8))
+                cv2.imwrite("test_label.png", label[0])
 
                 # Calculate average loss and accuracy
                 epoch_loss += loss / epoch_size
@@ -96,8 +99,23 @@ class Model:
         else:
             network.save_weights(f"weights/weights_final.h5")
 
-    def test(self):
-        raise NotImplementedError
+    def test(self, saved_weight_path=None):
+        network = CENet(input_dim=self.input_shape)
+        arr = np.zeros((1, 512, 512, 3))
+        network(arr)
+        network.load_weights("weights/weights_final.h5")
+        generator = dataloader.DataLoader()
+        total_metric = 0.0
+        for i in range(len(generator)):
+            img, label = generator[i]
+            out = network(img)
+            print(out.shape, label.shape)
+            cv2.imwrite("test_result.png", out[0].numpy())
+            cv2.imwrite("test_label.png", label[0])
+            single_metric = calculate_eval_metric(out[0].numpy(), label[0])
+            total_metric += np.asarray(single_metric)
+        avg_metric = total_metric / len(generator)
+        print(avg_metric)
 
 
 class PolyLearningRate(tf.keras.optimizers.schedules.LearningRateSchedule):

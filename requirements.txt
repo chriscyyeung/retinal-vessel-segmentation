@@ -5,6 +5,7 @@ opencv-python
 pillow
 tqdm
 numpy
+medpy
 tensorflow
 tensorflow-addons
 keras

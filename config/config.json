@@ -3,7 +3,7 @@
     "Pipeline": "config/pipeline.yaml",
     "TrainingSettings": {
         "InputShape": [512, 512, 3],
-        "Epochs": 100,
+        "Epochs": 1,
         "Patience": 20,
         "BatchSize": 8,
         "Optimizer": {

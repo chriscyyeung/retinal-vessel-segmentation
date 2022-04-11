@@ -37,6 +37,7 @@ class DataLoader(tf.keras.utils.Sequence):
         label = np.array(Image.open(label_path))
         label = cv2.resize(label, self.input_dim)
         sample = {"image": img, "label": label}
+        cv2.imwrite("before_augmentation.png", img)
 
         # Apply data augmentation methods
         if self.transforms:
@@ -48,6 +49,7 @@ class DataLoader(tf.keras.utils.Sequence):
         label = np.expand_dims(sample["label"], axis=2) / 255.
         label[label >= 0.5] = 1
         label[label < 0.5] = 0
+        cv2.imwrite("after_augmentation.png", img * 255.)
 
         return img, label
 
