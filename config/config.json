@@ -3,11 +3,12 @@
     "Pipeline": "config/pipeline.yaml",
     "TrainingSettings": {
         "InputShape": [512, 512, 3],
-        "Epochs": 1,
+        "Epochs": 300,
         "Patience": 20,
+        "UpdateLRPatience": 10,
         "BatchSize": 8,
         "Optimizer": {
-            "InitialLearningRate": 0.004,
+            "InitialLearningRate": 0.0002,
             "LearningRatePower": 0.9,
             "WeightDecay": 0.0001,
             "Momentum": 0.9

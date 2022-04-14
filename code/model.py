@@ -21,6 +21,7 @@ class Model:
         self.input_shape = config["TrainingSettings"]["InputShape"]
         self.epochs = config["TrainingSettings"]["Epochs"]
         self.patience = config["TrainingSettings"]["Patience"]
+        self.lr_update_patience = config["TrainingSettings"]["UpdateLRPatience"]
         self.batch_size = config["TrainingSettings"]["BatchSize"]
         self.initial_lr = config["TrainingSettings"]["Optimizer"]["InitialLearningRate"]
         self.lr_power = config["TrainingSettings"]["Optimizer"]["LearningRatePower"]
@@ -46,10 +47,12 @@ class Model:
 
         # Initialize dataloader, model, loss, optimizer
         generator = dataloader.DataLoader(transforms, self.batch_size, train=True)
-        loss_fn = DiceLoss()
+        # loss_fn = DiceLoss()
+        loss_fn = tf.keras.losses.BinaryCrossentropy()
         metric = tf.keras.metrics.BinaryAccuracy()
-        lr_schedule = PolyLearningRate(self.initial_lr, self.epochs * len(generator), self.lr_power)
-        optimizer = tfa.optimizers.SGDW(self.weight_decay, lr_schedule, self.momentum)
+        # lr_schedule = PolyLearningRate(self.initial_lr, self.epochs * len(generator), self.lr_power)
+        # optimizer = tfa.optimizers.SGDW(self.weight_decay, lr_schedule, self.momentum)
+        optimizer = tfa.optimizers.AdamW(self.weight_decay, self.initial_lr)
         network = CENet(input_dim=self.input_shape)
 
         # Train step using eager execution
@@ -64,7 +67,6 @@ class Model:
 
         # Variables for early stopping
         best_epoch_loss = np.inf
-        best_epoch_idx = 0
         last_improvement = 0
 
         # Training loop
@@ -75,44 +77,51 @@ class Model:
             for batch_idx in range(epoch_size):
                 img, label = generator[batch_idx]
                 out, loss = train_step(img, label)
-                cv2.imwrite("test_result.png", out[0].numpy().astype(np.uint8))
-                cv2.imwrite("test_label.png", label[0])
 
                 # Calculate average loss and accuracy
                 epoch_loss += loss / epoch_size
                 metric.update_state(label, out)
                 epoch_acc += metric.result().numpy() / epoch_size
-            print(f"{datetime.datetime.now()}: Epoch {epoch}: loss: {epoch_loss:.4f}, acc: {epoch_acc:.4f}")
+            print(f"{datetime.datetime.now()}: Epoch {epoch + 1}: loss: {epoch_loss:.4f}, acc: {epoch_acc:.4f}")
 
             # Early stopping criteria
             if epoch_loss < best_epoch_loss:
                 best_epoch_loss = epoch_loss
-                best_epoch_idx = epoch
                 last_improvement = 0
+                network.save_weights("weights/weights_cenet_adam.h5")
             else:
                 last_improvement += 1
             if last_improvement > self.patience:
-                network.save_weights(f"weights/weights_{best_epoch_idx}.h5")
+                print(f"Early stop at {epoch = }.")
                 break
+            if last_improvement > self.lr_update_patience:
+                old_lr = optimizer.lr.read_value()
+                if old_lr < 5e-7:
+                    break
+                network.load_weights("weights/weights_cenet_adam.h5")
+                new_lr = old_lr / 2.0
+                optimizer.lr.assign(new_lr)
+                print(f"Updating learning rate: {new_lr}")
 
             generator.on_epoch_end()
-        else:
-            network.save_weights(f"weights/weights_final.h5")
 
     def test(self, saved_weight_path=None):
         network = CENet(input_dim=self.input_shape)
         arr = np.zeros((1, 512, 512, 3))
         network(arr)
-        network.load_weights("weights/weights_final.h5")
+        if saved_weight_path:
+            network.load_weights(saved_weight_path)
         generator = dataloader.DataLoader()
         total_metric = 0.0
         for i in range(len(generator)):
             img, label = generator[i]
-            out = network(img)
-            print(out.shape, label.shape)
-            cv2.imwrite("test_result.png", out[0].numpy())
-            cv2.imwrite("test_label.png", label[0])
-            single_metric = calculate_eval_metric(out[0].numpy(), label[0])
+            out = network(img).numpy()
+            out[out > 0.5] = 255
+            out[out <= 0.5] = 0
+            label = label * 255.
+            cv2.imwrite(f"results/{i}_test_mask.png", out[0])
+            single_metric = calculate_eval_metric(out[0], label[0])
+            print(f"{i}: {single_metric}")
             total_metric += np.asarray(single_metric)
         avg_metric = total_metric / len(generator)
         print(avg_metric)

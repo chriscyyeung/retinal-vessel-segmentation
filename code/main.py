@@ -26,6 +26,12 @@ def get_parser():
         default="config/config.json",
         help="JSON file for model configuration"
     )
+    parser.add_argument(
+        "--path_to_weights",
+        dest="path_to_weights",
+        type=str,
+        help=".h5 file with pre-trained weights"
+    )
     return parser.parse_args()
 
 
@@ -43,7 +49,7 @@ def main(FLAGS):
     if FLAGS.phase == "train":
         model.train()
     elif FLAGS.phase == "test":
-        model.test()
+        model.test(saved_weight_path=FLAGS.path_to_weights)
     else:
         sys.exit("Invalid training phase.")
 

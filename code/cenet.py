@@ -1,5 +1,4 @@
 import tensorflow as tf
-import keras.backend as K
 from tensorflow.keras.layers import (
     Layer, Input, Conv2D, Conv2DTranspose, ReLU, MaxPool2D, BatchNormalization, Activation
 )
