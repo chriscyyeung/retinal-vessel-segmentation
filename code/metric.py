@@ -1,18 +1,6 @@
 import numpy as np
+import sklearn.metrics as metrics
 from medpy import metric as mt
-
-
-def accuracy(pred, true):
-    """Calculates the accuracy of the prediction by dividing the number of
-    correctly classified images by the total number of test samples.
-
-    :param pred: an array of shape (n_samples, n_classes) of the predicted
-                 class labels
-    :param true: the ground truth class labels
-    :return: a float representing the accuracy of the prediction
-    """
-    num_correct = np.sum((pred == true).numpy().all(axis=1))
-    return num_correct / pred.shape[0]
 
 
 def calculate_eval_metric(predicted, target_gt):
@@ -23,3 +11,42 @@ def calculate_eval_metric(predicted, target_gt):
     specificity = mt.binary.specificity(predicted, target_gt)
 
     return dc, precision, recall, sensitivity, specificity
+
+
+def calculate_auc_test(prediction, label):
+    # read images
+    # convert 2D array into 1D array
+    result_1D = prediction.flatten()
+    label_1D = label.flatten()
+
+
+    label_1D = label_1D / 255
+
+    auc = metrics.roc_auc_score(label_1D, result_1D)
+
+    # print("AUC={0:.4f}".format(auc))
+
+    return auc
+
+
+def accuracy(pred_mask, label):
+    '''
+    acc=(TP+TN)/(TP+FN+TN+FP)
+    '''
+    pred_mask = pred_mask.astype(np.uint8)
+    TP, FN, TN, FP = [0, 0, 0, 0]
+    for i in range(label.shape[0]):
+        for j in range(label.shape[1]):
+            if label[i][j] == 1:
+                if pred_mask[i][j] == 1:
+                    TP += 1
+                elif pred_mask[i][j] == 0:
+                    FN += 1
+            elif label[i][j] == 0:
+                if pred_mask[i][j] == 1:
+                    FP += 1
+                elif pred_mask[i][j] == 0:
+                    TN += 1
+    acc = (TP + TN) / (TP + FN + TN + FP)
+    sen = TP / (TP + FN)
+    return acc, sen

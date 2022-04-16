@@ -8,7 +8,7 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 import dataloader
-from metric import accuracy, calculate_eval_metric
+from metric import accuracy, calculate_eval_metric, calculate_auc_test
 from loss import DiceLoss
 from cenet import CENet
 
@@ -112,19 +112,35 @@ class Model:
         if saved_weight_path:
             network.load_weights(saved_weight_path)
         generator = dataloader.DataLoader()
-        total_metric = 0.0
+        # total_metric = 0.0
+        total_auc = []
+        total_acc = []
+        total_sen = []
         for i in range(len(generator)):
             img, label = generator[i]
             out = network(img).numpy()
             out[out > 0.5] = 255
             out[out <= 0.5] = 0
             label = label * 255.
-            cv2.imwrite(f"results/{i}_test_mask.png", out[0])
-            single_metric = calculate_eval_metric(out[0], label[0])
-            print(f"{i}: {single_metric}")
-            total_metric += np.asarray(single_metric)
-        avg_metric = total_metric / len(generator)
-        print(avg_metric)
+            out_copy = np.copy(out)
+            # cv2.imwrite(f"results/{i}_test_mask.png", out[0])
+            # single_metric = calculate_eval_metric(out[0], label[0])
+            auc = calculate_auc_test(out_copy[0], label[0])
+            out[out == 255] = 1
+            label[label == 255] = 1
+            acc, sen = accuracy(out[0, ..., 0], label[0, ..., 0])
+            total_auc.append(auc)
+            total_acc.append(acc)
+            total_sen.append(sen)
+            print(i, acc, sen, auc)
+            # print(f"{i}: {single_metric}")
+            # total_metric += np.asarray(single_metric)
+        # avg_metric = total_metric / len(generator)
+        # print(avg_metric)
+        print(np.mean(total_acc), np.std(total_acc))
+        print(np.mean(total_sen), np.std(total_sen))
+        print(np.mean(total_auc), np.std(total_auc))
+
 
 
 class PolyLearningRate(tf.keras.optimizers.schedules.LearningRateSchedule):
